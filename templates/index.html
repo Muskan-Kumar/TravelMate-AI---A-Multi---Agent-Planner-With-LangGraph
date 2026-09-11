@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="TripMate AI - Multi-Agent AI Travel Planner"
+    >
+
+    <title>TravelMate AI — Multi-Agent Travel Planner</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="background">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="orb orb-three"></div>
+    </div>
+
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+
+        <div class="nav-inner">
+
+            <div class="brand">
+
+                <div class="brand-icon">
+                    ✦
+                </div>
+
+                <div>
+                    <div class="brand-name">
+                        TravelMate<span>AI</span>
+                    </div>
+
+                    <div class="brand-subtitle">
+                        Multi-Agent Travel Intelligence
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="nav-right">
+
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    AI System Online
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <main class="main-container">
+
+
+        <!-- HERO -->
+        <section class="hero">
+
+            <div class="hero-badge">
+                <span class="spark">✦</span>
+                Powered by LangGraph Multi-Agent AI
+            </div>
+
+
+            <h1>
+                Your journey.
+                <span>Intelligently planned.</span>
+            </h1>
+
+
+            <p class="hero-description">
+                Tell TravelMate where you want to go, and our AI agents
+                research flights, discover hotels and build a complete
+                day-by-day itinerary for you.
+            </p>
+
+        </section>
+
+
+
+        <!-- PLANNER -->
+        <section class="planner-card">
+
+            <div class="planner-top">
+
+                <div>
+
+                    <div class="section-eyebrow">
+                        AI TRAVEL PLANNER
+                    </div>
+
+                    <h2>
+                        Where are you going?
+                    </h2>
+
+                    <p>
+                        Describe your trip naturally. TripMate AI will
+                        handle the planning.
+                    </p>
+
+                </div>
+
+
+                <div class="planner-ai-badge">
+                    <span>●</span>
+                    Multi-Agent
+                </div>
+
+            </div>
+
+
+            <div class="input-wrapper">
+
+                <textarea
+                    id="userInput"
+                    maxlength="2000"
+                    placeholder="Example: Plan a 7-day trip to Nepal from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food and local transport..."
+                ></textarea>
+
+
+                <div class="input-bottom">
+
+                    <span id="charCount">
+                        0 / 2000
+                    </span>
+
+                    <span>
+                        Ctrl + Enter to plan
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <button
+                id="sendBtn"
+                class="generate-btn"
+                onclick="sendMessage()"
+            >
+
+                <span
+                    id="btnText"
+                    class="btn-content"
+                >
+                    <span>Generate Travel Plan</span>
+                    <span class="btn-arrow">→</span>
+                </span>
+
+                <span
+                    id="btnLoader"
+                    class="loader hidden"
+                ></span>
+
+            </button>
+
+
+            <!-- QUICK PROMPTS -->
+            <div class="quick-section">
+
+                <span class="quick-label">
+                    Try an example
+                </span>
+
+
+                <div class="quick-prompts">
+
+                    <button
+                        onclick="setPrompt('Plan a 7-day Nepal trip from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food and local transport.')"
+                    >
+                        🇳🇵 Nepal
+                    </button>
+
+
+                    <button
+                        onclick="setPrompt('Plan a 7-day Japan trip from India for 2 people including flights, hotels, sightseeing, food and local transport.')"
+                    >
+                        🇯🇵 Japan
+                    </button>
+
+
+                    <button
+                        onclick="setPrompt('Plan a 5-day Dubai trip from India for 2 people including flights, hotels and sightseeing.')"
+                    >
+                        🇦🇪 Dubai
+                    </button>
+
+
+                    <button
+                        onclick="setPrompt('Plan a 7-day Thailand trip from India for 2 people with budget hotels and sightseeing.')"
+                    >
+                        🇹🇭 Thailand
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- AGENT WORKFLOW -->
+        <section
+            id="agentSection"
+            class="agent-section hidden"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <span class="section-eyebrow">
+                        AI WORKFLOW
+                    </span>
+
+                    <h2>
+                        Your trip is being planned by AI agents
+                    </h2>
+
+                </div>
+
+                <div class="workflow-status">
+                    <span class="pulse"></span>
+                    Processing
+                </div>
+
+            </div>
+
+
+            <div class="agent-grid">
+
+                <div
+                    id="agentFlight"
+                    class="agent-card"
+                >
+
+                    <div class="agent-icon flight-icon">
+                        ✈
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>Flight Agent</h3>
+
+                        <p>
+                            Searching flight options
+                        </p>
+
+                    </div>
+
+                    <div class="agent-check">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="agentHotel"
+                    class="agent-card"
+                >
+
+                    <div class="agent-icon hotel-icon">
+                        ◆
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>Hotel Agent</h3>
+
+                        <p>
+                            Finding suitable stays
+                        </p>
+
+                    </div>
+
+                    <div class="agent-check">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="agentResearch"
+                    class="agent-card"
+                >
+
+                    <div class="agent-icon research-icon">
+                        ◉
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>Research Agent</h3>
+
+                        <p>
+                            Researching destinations
+                        </p>
+
+                    </div>
+
+                    <div class="agent-check">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="agentPlanner"
+                    class="agent-card"
+                >
+
+                    <div class="agent-icon planner-icon">
+                        ✦
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>Itinerary Agent</h3>
+
+                        <p>
+                            Building your itinerary
+                        </p>
+
+                    </div>
+
+                    <div class="agent-check">
+                        ✓
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ERROR -->
+        <section
+            id="errorBox"
+            class="error-box hidden"
+        ></section>
+
+
+
+        <!-- RESULTS -->
+        <section
+            id="resultSection"
+            class="results hidden"
+        >
+
+            <!-- Result Header -->
+            <div class="results-header">
+
+                <div>
+
+                    <div class="section-eyebrow">
+                        YOUR AI TRAVEL PLAN
+                    </div>
+
+                    <h2>
+                        Trip plan generated
+                    </h2>
+
+                    <p id="threadInfo">
+                        Thread ID: —
+                    </p>
+
+                </div>
+
+
+                <div class="result-actions">
+
+                    <button
+                        class="secondary-btn copy-btn"
+                        onclick="copyResult()"
+                    >
+                        <span>⧉</span>
+                        Copy
+                    </button>
+
+
+                    <button
+                        class="primary-small-btn download-btn"
+                        onclick="downloadPDF()"
+                    >
+                        ↓
+                        Download PDF
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Agent Summary -->
+            <div class="agent-summary">
+
+                <div class="summary-item">
+
+                    <div class="summary-symbol">
+                        ✈
+                    </div>
+
+                    <div>
+                        <span>Flights</span>
+                        <strong id="flightSummary">
+                            AI researched
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="summary-divider"></div>
+
+
+                <div class="summary-item">
+
+                    <div class="summary-symbol">
+                        ◆
+                    </div>
+
+                    <div>
+                        <span>Hotels</span>
+                        <strong id="hotelSummary">
+                            AI researched
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="summary-divider"></div>
+
+
+                <div class="summary-item">
+
+                    <div class="summary-symbol">
+                        ◷
+                    </div>
+
+                    <div>
+                        <span>Itinerary</span>
+                        <strong id="itinerarySummary">
+                            Generated
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TABS -->
+            <div class="result-tabs">
+
+                <button
+                    class="result-tab active"
+                    data-tab="overview"
+                    onclick="switchTab('overview')"
+                >
+                    Overview
+                </button>
+
+
+                <button
+                    class="result-tab"
+                    data-tab="flights"
+                    onclick="switchTab('flights')"
+                >
+                    ✈ Flights
+                </button>
+
+
+                <button
+                    class="result-tab"
+                    data-tab="hotels"
+                    onclick="switchTab('hotels')"
+                >
+                    ◆ Hotels
+                </button>
+
+
+                <button
+                    class="result-tab"
+                    data-tab="itinerary"
+                    onclick="switchTab('itinerary')"
+                >
+                    ◷ Itinerary
+                </button>
+
+
+                <button
+                    class="result-tab"
+                    data-tab="agents"
+                    onclick="switchTab('agents')"
+                >
+                    ✦ AI Details
+                </button>
+
+            </div>
+
+
+
+            <!-- PDF CONTENT -->
+            <div
+                id="pdfContent"
+                class="pdf-content"
+            >
+
+                <div class="pdf-title">
+                    TravelMate AI — Travel Plan
+                </div>
+
+
+                <!-- OVERVIEW -->
+                <div
+                    id="tab-overview"
+                    class="tab-content active"
+                >
+
+                    <div
+                        id="resultBox"
+                        class="result-box"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- FLIGHTS -->
+                <div
+                    id="tab-flights"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ✈
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Flight Information
+                            </h3>
+
+                            <p>
+                                Flight options researched by the AI travel system.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="flightBox"
+                        class="data-box"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- HOTELS -->
+                <div
+                    id="tab-hotels"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ◆
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Hotel Recommendations
+                            </h3>
+
+                            <p>
+                                Accommodation information researched for your trip.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="hotelBox"
+                        class="data-box"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- ITINERARY -->
+                <div
+                    id="tab-itinerary"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ◷
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Day-by-Day Itinerary
+                            </h3>
+
+                            <p>
+                                Your AI-generated travel schedule.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="itineraryBox"
+                        class="data-box itinerary-box"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- AI DETAILS -->
+                <div
+                    id="tab-agents"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ✦
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Multi-Agent Execution
+                            </h3>
+
+                            <p>
+                                Information returned by your LangGraph workflow.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="llmBox"
+                        class="data-box"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        <div class="footer-inner">
+
+            <div class="footer-brand">
+                ✦ TravelMate AI
+            </div>
+
+            <div class="footer-tech">
+                FastAPI · LangGraph · Groq · Tavily · PostgreSQL · AviationStack
+            </div>
+
+            <div class="footer-copy">
+                AI-powered travel planning
+            </div>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+
+    <!-- PDF -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+    ></script>
+
+
+    <!-- Custom JS -->
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
