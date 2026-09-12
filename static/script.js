@@ -1,264 +1,112 @@
 /* =========================================================
-   TRIPMATE AI
+   TRAVELMATE AI
    Multi-Agent Travel Planner Frontend
 ========================================================= */
 
 
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+
 let currentThreadId =
     localStorage.getItem("travel_thread_id") || null;
 
-let latestAnswerMarkdown = "";
-
 let latestTravelData = null;
 
+let latestAnswerMarkdown = "";
+
+let isProcessing = false;
+
+let workflowTimer = null;
+
+let currentWorkflowIndex = 0;
 
 
 /* =========================================================
-   QUICK PROMPTS
+   AGENT CONFIGURATION
 ========================================================= */
 
-function setPrompt(text) {
+const AGENTS = [
+    {
+        id: "agentSupervisor",
+        key: "supervisor",
+        label: "Supervisor"
+    },
 
-    const input =
-        document.getElementById("userInput");
+    {
+        id: "agentFlight",
+        key: "flight_agent",
+        label: "Flight Agent"
+    },
 
-    if (!input) return;
+    {
+        id: "agentHotel",
+        key: "hotel_agent",
+        label: "Hotel Agent"
+    },
 
-    input.value = text;
+    {
+        id: "agentWeather",
+        key: "weather_agent",
+        label: "Weather Agent"
+    },
 
-    updateCharCount();
+    {
+        id: "agentBudget",
+        key: "budget_agent",
+        label: "Budget Agent"
+    },
 
-    input.focus();
-}
+    {
+        id: "agentPlanner",
+        key: "itinerary_agent",
+        label: "Itinerary Agent"
+    },
 
-
-
-/* =========================================================
-   CHARACTER COUNT
-========================================================= */
-
-function updateCharCount() {
-
-    const input =
-        document.getElementById("userInput");
-
-    const counter =
-        document.getElementById("charCount");
-
-    if (!input || !counter) {
-        return;
+    {
+        id: "agentHuman",
+        key: "human_review",
+        label: "Human Review"
     }
-
-    counter.textContent =
-        `${input.value.length} / 2000`;
-}
-
+];
 
 
 /* =========================================================
-   LOADING
+   DOM HELPERS
 ========================================================= */
 
-function setLoading(isLoading) {
-
-    const sendBtn =
-        document.getElementById("sendBtn");
-
-    const btnText =
-        document.getElementById("btnText");
-
-    const btnLoader =
-        document.getElementById("btnLoader");
-
-    const agentSection =
-        document.getElementById("agentSection");
-
-    if (!sendBtn) return;
+function getElement(id) {
+    return document.getElementById(id);
+}
 
 
-    sendBtn.disabled = isLoading;
+function showElement(id) {
+    const element = getElement(id);
 
-
-    if (isLoading) {
-
-        if (btnText) {
-            btnText.classList.add("hidden");
-        }
-
-        if (btnLoader) {
-            btnLoader.classList.remove("hidden");
-        }
-
-        if (agentSection) {
-            agentSection.classList.remove("hidden");
-        }
-
-        animateAgents();
-
-    } else {
-
-        if (btnText) {
-            btnText.classList.remove("hidden");
-        }
-
-        if (btnLoader) {
-            btnLoader.classList.add("hidden");
-        }
-
+    if (element) {
+        element.classList.remove("hidden");
     }
 }
 
 
+function hideElement(id) {
+    const element = getElement(id);
 
-/* =========================================================
-   AGENT ANIMATION
-========================================================= */
-
-function animateAgents() {
-
-    const agents = [
-
-        document.getElementById("agentFlight"),
-
-        document.getElementById("agentHotel"),
-
-        document.getElementById("agentResearch"),
-
-        document.getElementById("agentPlanner")
-
-    ].filter(Boolean);
-
-
-    agents.forEach(agent => {
-
-        agent.classList.remove("active");
-
-    });
-
-
-    agents.forEach((agent, index) => {
-
-        setTimeout(() => {
-
-            agent.classList.add("active");
-
-        }, index * 650);
-
-    });
+    if (element) {
+        element.classList.add("hidden");
+    }
 }
 
 
-
 /* =========================================================
-   FINISH AGENTS
+   SAFE TEXT
 ========================================================= */
 
-function finishAgents() {
-
-    const agents = [
-
-        document.getElementById("agentFlight"),
-
-        document.getElementById("agentHotel"),
-
-        document.getElementById("agentResearch"),
-
-        document.getElementById("agentPlanner")
-
-    ].filter(Boolean);
-
-
-    agents.forEach(agent => {
-
-        agent.classList.add("active");
-
-    });
-}
-
-
-
-/* =========================================================
-   ERROR
-========================================================= */
-
-function showError(message) {
-
-    const errorBox =
-        document.getElementById("errorBox");
-
-    if (!errorBox) return;
-
-    errorBox.textContent = message;
-
-    errorBox.classList.remove("hidden");
-
-    errorBox.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-    });
-}
-
-
-function hideError() {
-
-    const errorBox =
-        document.getElementById("errorBox");
-
-    if (!errorBox) return;
-
-    errorBox.classList.add("hidden");
-
-    errorBox.textContent = "";
-}
-
-
-
-/* =========================================================
-   SAFE STRING
-========================================================= */
-
-function safeString(value) {
+function escapeHtml(value) {
 
     if (value === null || value === undefined) {
         return "";
     }
-
-
-    if (typeof value === "string") {
-        return value;
-    }
-
-
-    if (
-        typeof value === "number" ||
-        typeof value === "boolean"
-    ) {
-        return String(value);
-    }
-
-
-    try {
-
-        return JSON.stringify(
-            value,
-            null,
-            2
-        );
-
-    } catch {
-
-        return String(value);
-
-    }
-}
-
-
-
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
-
-function escapeHTML(value) {
 
     return String(value)
         .replace(/&/g, "&amp;")
@@ -269,496 +117,403 @@ function escapeHTML(value) {
 }
 
 
-
 /* =========================================================
-   RENDER GENERIC DATA
+   MARKDOWN RENDERING
 ========================================================= */
 
-function renderGenericData(data, title = "") {
+function renderMarkdown(text) {
 
-    if (
-        data === null ||
-        data === undefined ||
-        data === ""
-    ) {
-
+    if (!text) {
         return `
-            <div class="data-empty">
-                No information was returned for this section.
+            <div class="empty-state">
+                No information available.
             </div>
         `;
     }
 
-
-    /* STRING */
-
-    if (typeof data === "string") {
-
-        if (
-            typeof marked !== "undefined" &&
-            (
-                data.includes("#") ||
-                data.includes("*") ||
-                data.includes("- ")
-            )
-        ) {
-
-            return `
-                <div class="raw-markdown">
-                    ${marked.parse(data)}
-                </div>
-            `;
-
-        }
-
-
-        return `
-            <div class="raw-data">
-                ${escapeHTML(data)}
-            </div>
-        `;
+    if (typeof marked === "undefined") {
+        return `<p>${escapeHtml(text)}</p>`;
     }
 
+    try {
 
+        return marked.parse(String(text), {
+            breaks: true,
+            gfm: true
+        });
 
-    /* ARRAY */
+    } catch (error) {
 
-    if (Array.isArray(data)) {
+        console.error("Markdown rendering error:", error);
 
-        if (data.length === 0) {
-
-            return `
-                <div class="data-empty">
-                    No results found.
-                </div>
-            `;
-        }
-
-
-        return data
-            .map((item, index) => {
-
-                if (
-                    typeof item === "object" &&
-                    item !== null
-                ) {
-
-                    return `
-                        <div class="data-card">
-
-                            <div class="data-card-title">
-                                ${title || "Result"} ${index + 1}
-                            </div>
-
-                            ${renderObject(item)}
-
-                        </div>
-                    `;
-
-                }
-
-
-                return `
-                    <div class="data-card">
-
-                        <div class="data-card-title">
-                            ${title || "Result"} ${index + 1}
-                        </div>
-
-                        <p>
-                            ${escapeHTML(
-                                safeString(item)
-                            )}
-                        </p>
-
-                    </div>
-                `;
-
-            })
-            .join("");
+        return `<p>${escapeHtml(text)}</p>`;
     }
-
-
-
-    /* OBJECT */
-
-    if (typeof data === "object") {
-
-        return renderObject(data);
-    }
-
-
-    return `
-        <div class="raw-data">
-            ${escapeHTML(
-                safeString(data)
-            )}
-        </div>
-    `;
 }
 
 
-
 /* =========================================================
-   RENDER OBJECT
+   INPUT
 ========================================================= */
 
-function renderObject(obj) {
+function updateCharacterCount() {
 
-    if (!obj || typeof obj !== "object") {
+    const input = getElement("userInput");
+    const counter = getElement("charCount");
 
-        return `
-            <p>
-                ${escapeHTML(
-                    safeString(obj)
-                )}
-            </p>
-        `;
+    if (!input || !counter) {
+        return;
     }
 
-
-    return Object.entries(obj)
-        .map(([key, value]) => {
-
-            const label =
-                key
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, c =>
-                        c.toUpperCase()
-                    );
-
-
-            if (
-                typeof value === "object" &&
-                value !== null
-            ) {
-
-                return `
-                    <div class="data-card">
-
-                        <div class="data-card-title">
-                            ${escapeHTML(label)}
-                        </div>
-
-                        ${renderGenericData(value)}
-
-                    </div>
-                `;
-
-            }
-
-
-            return `
-                <p>
-                    <strong>
-                        ${escapeHTML(label)}:
-                    </strong>
-
-                    ${escapeHTML(
-                        safeString(value)
-                    )}
-                </p>
-            `;
-
-        })
-        .join("");
+    counter.textContent =
+        `${input.value.length} / ${input.maxLength}`;
 }
 
 
+function setPrompt(text) {
+
+    const input = getElement("userInput");
+
+    if (!input) {
+        return;
+    }
+
+    input.value = text;
+
+    updateCharacterCount();
+
+    input.focus();
+
+    input.setSelectionRange(
+        input.value.length,
+        input.value.length
+    );
+}
+
 
 /* =========================================================
-   RESULT
+   BUTTON LOADING STATE
 ========================================================= */
 
-function showResult(data) {
+function setGenerateLoading(loading) {
 
-    latestTravelData = data;
+    const button = getElement("sendBtn");
+    const buttonText = getElement("btnText");
+    const loader = getElement("btnLoader");
 
-    latestAnswerMarkdown =
-        data.answer || "";
+    if (!button) {
+        return;
+    }
+
+    button.disabled = loading;
+
+    if (loading) {
+
+        buttonText?.classList.add("hidden");
+
+        loader?.classList.remove("hidden");
+
+    } else {
+
+        buttonText?.classList.remove("hidden");
+
+        loader?.classList.add("hidden");
+    }
+}
 
 
-    const resultSection =
-        document.getElementById("resultSection");
+/* =========================================================
+   WORKFLOW STATUS
+========================================================= */
 
-    const resultBox =
-        document.getElementById("resultBox");
+function resetWorkflow() {
 
-    const threadInfo =
-        document.getElementById("threadInfo");
+    AGENTS.forEach(agent => {
+
+        const card = getElement(agent.id);
+
+        if (!card) {
+            return;
+        }
+
+        card.classList.remove(
+            "active",
+            "completed",
+            "skipped",
+            "waiting-human"
+        );
+
+        const status =
+            card.querySelector(".agent-status-icon span");
+
+        if (status) {
+            status.textContent = "•";
+        }
+    });
 
 
-    /* -------------------------
-       MAIN ANSWER
-    ------------------------- */
+    const workflowStatus =
+        getElement("workflowStatus");
 
-    if (resultBox) {
+    const workflowText =
+        getElement("workflowStatusText");
 
-        if (
-            typeof marked !== "undefined" &&
-            latestAnswerMarkdown
-        ) {
+    workflowStatus?.classList.remove(
+        "waiting",
+        "complete"
+    );
 
-            resultBox.innerHTML =
-                marked.parse(
-                    latestAnswerMarkdown
-                );
+    workflowStatus?.classList.add("processing");
+
+    if (workflowText) {
+        workflowText.textContent = "Processing";
+    }
+
+
+    currentWorkflowIndex = 0;
+}
+
+
+function setAgentActive(agentKey) {
+
+    AGENTS.forEach(agent => {
+
+        const card = getElement(agent.id);
+
+        if (!card) {
+            return;
+        }
+
+        if (agent.key === agentKey) {
+
+            card.classList.add("active");
+
+            card.classList.remove(
+                "completed",
+                "skipped"
+            );
 
         } else {
 
-            resultBox.innerHTML = `
-                <div class="raw-data">
-                    ${escapeHTML(
-                        latestAnswerMarkdown ||
-                        "No travel plan was returned."
-                    )}
-                </div>
-            `;
+            card.classList.remove("active");
+        }
+    });
+}
 
+
+function setAgentCompleted(agentKey) {
+
+    const agent =
+        AGENTS.find(item => item.key === agentKey);
+
+    if (!agent) {
+        return;
+    }
+
+    const card = getElement(agent.id);
+
+    if (!card) {
+        return;
+    }
+
+    card.classList.remove("active");
+
+    card.classList.add("completed");
+
+    const status =
+        card.querySelector(".agent-status-icon span");
+
+    if (status) {
+        status.textContent = "✓";
+    }
+}
+
+
+function setAgentSkipped(agentKey) {
+
+    const agent =
+        AGENTS.find(item => item.key === agentKey);
+
+    if (!agent) {
+        return;
+    }
+
+    const card = getElement(agent.id);
+
+    if (!card) {
+        return;
+    }
+
+    card.classList.remove(
+        "active",
+        "completed"
+    );
+
+    card.classList.add("skipped");
+
+    const status =
+        card.querySelector(".agent-status-icon span");
+
+    if (status) {
+        status.textContent = "—";
+    }
+}
+
+
+function setHumanWaiting() {
+
+    const card = getElement("agentHuman");
+
+    if (!card) {
+        return;
+    }
+
+    card.classList.remove(
+        "active",
+        "completed"
+    );
+
+    card.classList.add("waiting-human");
+
+    const status =
+        card.querySelector(".agent-status-icon span");
+
+    if (status) {
+        status.textContent = "!";
+    }
+
+
+    const workflowStatus =
+        getElement("workflowStatus");
+
+    const workflowText =
+        getElement("workflowStatusText");
+
+    workflowStatus?.classList.remove("processing");
+
+    workflowStatus?.classList.add("waiting");
+
+    if (workflowText) {
+        workflowText.textContent = "Waiting for review";
+    }
+}
+
+
+function setWorkflowComplete() {
+
+    AGENTS.forEach(agent => {
+
+        const card = getElement(agent.id);
+
+        if (!card) {
+            return;
         }
 
-    }
-
-
-
-    /* -------------------------
-       THREAD
-    ------------------------- */
-
-    if (threadInfo) {
-
-        threadInfo.textContent =
-            `Thread ID: ${data.thread_id || "—"}`;
-
-    }
-
-
-
-    /* -------------------------
-       FLIGHTS
-    ------------------------- */
-
-    const flightBox =
-        document.getElementById("flightBox");
-
-
-    if (flightBox) {
-
-        flightBox.innerHTML =
-            renderGenericData(
-                data.flight_results,
-                "Flight"
-            );
-
-    }
-
-
-
-    /* -------------------------
-       HOTELS
-    ------------------------- */
-
-    const hotelBox =
-        document.getElementById("hotelBox");
-
-
-    if (hotelBox) {
-
-        hotelBox.innerHTML =
-            renderGenericData(
-                data.hotel_results,
-                "Hotel"
-            );
-
-    }
-
-
-
-    /* -------------------------
-       ITINERARY
-    ------------------------- */
-
-    const itineraryBox =
-        document.getElementById("itineraryBox");
-
-
-    if (itineraryBox) {
-
-        itineraryBox.innerHTML =
-            renderGenericData(
-                data.itinerary,
-                "Day"
-            );
-
-    }
-
-
-
-    /* -------------------------
-       LLM CALLS
-    ------------------------- */
-
-    const llmBox =
-        document.getElementById("llmBox");
-
-
-    if (llmBox) {
-
-        llmBox.innerHTML =
-            renderGenericData(
-                data.llm_calls,
-                "Agent"
-            );
-
-    }
-
-
-
-    /* -------------------------
-       SUMMARY
-    ------------------------- */
-
-    updateSummary(data);
-
-
-
-    /* -------------------------
-       SHOW
-    ------------------------- */
-
-    if (resultSection) {
-
-        resultSection.classList.remove(
-            "hidden"
+        card.classList.remove(
+            "active",
+            "waiting-human"
         );
 
-        resultSection.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+        if (
+            !card.classList.contains("skipped")
+        ) {
+            card.classList.add("completed");
 
+            const status =
+                card.querySelector(
+                    ".agent-status-icon span"
+                );
+
+            if (status) {
+                status.textContent = "✓";
+            }
+        }
+    });
+
+
+    const workflowStatus =
+        getElement("workflowStatus");
+
+    const workflowText =
+        getElement("workflowStatusText");
+
+    workflowStatus?.classList.remove(
+        "processing",
+        "waiting"
+    );
+
+    workflowStatus?.classList.add("complete");
+
+    if (workflowText) {
+        workflowText.textContent = "Completed";
     }
-
-
-    finishAgents();
 }
-
 
 
 /* =========================================================
-   SUMMARY
+   SIMULATED PROGRESS
+   =========================================================
+
+   Important:
+   Backend currently returns one HTTP response after
+   LangGraph reaches interrupt().
+
+   Therefore frontend cannot know the exact real-time
+   internal node currently executing.
+
+   This animation provides visual progress while the
+   backend request is running.
 ========================================================= */
 
-function updateSummary(data) {
+function startWorkflowAnimation() {
 
-    const flightSummary =
-        document.getElementById("flightSummary");
+    resetWorkflow();
 
-    const hotelSummary =
-        document.getElementById("hotelSummary");
+    const sequence = [
+        "supervisor",
+        "flight_agent",
+        "hotel_agent",
+        "weather_agent",
+        "budget_agent",
+        "itinerary_agent"
+    ];
 
-    const itinerarySummary =
-        document.getElementById("itinerarySummary");
+    currentWorkflowIndex = 0;
 
+    setAgentActive(sequence[0]);
 
-    if (flightSummary) {
+    workflowTimer = setInterval(() => {
 
-        flightSummary.textContent =
-            hasData(data.flight_results)
-                ? "AI researched"
-                : "Not available";
-    }
+        currentWorkflowIndex++;
 
+        if (
+            currentWorkflowIndex >= sequence.length
+        ) {
+            clearInterval(workflowTimer);
 
-    if (hotelSummary) {
+            return;
+        }
 
-        hotelSummary.textContent =
-            hasData(data.hotel_results)
-                ? "AI researched"
-                : "Not available";
-    }
+        setAgentCompleted(
+            sequence[currentWorkflowIndex - 1]
+        );
 
+        setAgentActive(
+            sequence[currentWorkflowIndex]
+        );
 
-    if (itinerarySummary) {
-
-        itinerarySummary.textContent =
-            hasData(data.itinerary)
-                ? "Generated"
-                : "Included in plan";
-    }
-
+    }, 1200);
 }
 
 
+function stopWorkflowAnimation() {
 
-/* =========================================================
-   HAS DATA
-========================================================= */
+    if (workflowTimer) {
 
-function hasData(value) {
+        clearInterval(workflowTimer);
 
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return false;
+        workflowTimer = null;
     }
-
-
-    if (typeof value === "string") {
-
-        return value.trim().length > 0;
-    }
-
-
-    if (Array.isArray(value)) {
-
-        return value.length > 0;
-    }
-
-
-    if (typeof value === "object") {
-
-        return Object.keys(value).length > 0;
-    }
-
-
-    return true;
 }
-
-
-
-/* =========================================================
-   TABS
-========================================================= */
-
-function switchTab(tabName) {
-
-    document
-        .querySelectorAll(".result-tab")
-        .forEach(button => {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.tab === tabName
-            );
-
-        });
-
-
-    document
-        .querySelectorAll(".tab-content")
-        .forEach(content => {
-
-            content.classList.toggle(
-                "active",
-                content.id === `tab-${tabName}`
-            );
-
-        });
-
-}
-
 
 
 /* =========================================================
@@ -767,24 +522,22 @@ function switchTab(tabName) {
 
 async function sendMessage() {
 
-    hideError();
+    if (isProcessing) {
+        return;
+    }
 
+    const input = getElement("userInput");
 
-    const input =
-        document.getElementById("userInput");
+    if (!input) {
+        return;
+    }
 
-
-    if (!input) return;
-
-
-    const message =
-        input.value.trim();
-
+    const message = input.value.trim();
 
     if (!message) {
 
         showError(
-            "Please describe your trip first."
+            "Please describe your trip before generating a plan."
         );
 
         input.focus();
@@ -796,109 +549,806 @@ async function sendMessage() {
     if (message.length > 2000) {
 
         showError(
-            "Your travel request is too long. Please keep it under 2000 characters."
+            "Your travel request is too long. Please keep it within 2000 characters."
         );
 
         return;
     }
 
 
-    setLoading(true);
+    isProcessing = true;
+
+    clearError();
+
+    hideElement("approvalSection");
+
+    hideElement("resultSection");
+
+    showElement("agentSection");
+
+    setGenerateLoading(true);
+
+    startWorkflowAnimation();
 
 
     try {
 
-        const response =
-            await fetch(
-                "/api/travel",
-                {
-                    method: "POST",
+        const response = await fetch(
+            "/api/travel",
+            {
+                method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-                    body: JSON.stringify({
-
-                        message: message,
-
-                        thread_id:
-                            currentThreadId
-
-                    })
-                }
-            );
+                body: JSON.stringify({
+                    message: message,
+                    thread_id: null
+                })
+            }
+        );
 
 
-        let data;
+        const data =
+            await response.json();
 
 
-        try {
-
-            data =
-                await response.json();
-
-        } catch {
-
-            throw new Error(
-                "The server returned an invalid response."
-            );
-
-        }
-
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
+        if (!response.ok || !data.success) {
 
             throw new Error(
                 data.error ||
                 "Unable to generate the travel plan."
             );
-
         }
 
 
-        currentThreadId =
-            data.thread_id;
-
-
-        if (currentThreadId) {
-
-            localStorage.setItem(
-                "travel_thread_id",
-                currentThreadId
-            );
-
-        }
-
-
-        showResult(data);
+        handleTravelResponse(data);
 
 
     } catch (error) {
 
-        console.error(
-            "TripMate error:",
-            error
-        );
+        console.error(error);
 
+        stopWorkflowAnimation();
 
         showError(
             error.message ||
-            "Something went wrong. Please try again."
+            "Something went wrong while planning your trip."
         );
+
+        setWorkflowError();
 
     } finally {
 
-        setLoading(false);
+        isProcessing = false;
 
+        setGenerateLoading(false);
     }
-
 }
 
+
+/* =========================================================
+   HANDLE TRAVEL RESPONSE
+========================================================= */
+
+function handleTravelResponse(data) {
+
+    latestTravelData = data;
+
+    currentThreadId =
+        data.thread_id || null;
+
+    if (currentThreadId) {
+
+        localStorage.setItem(
+            "travel_thread_id",
+            currentThreadId
+        );
+    }
+
+
+    stopWorkflowAnimation();
+
+
+    /*
+        Mark selected agents.
+
+        Supervisor always runs.
+
+        Backend may select only some specialist agents.
+    */
+
+    setAgentCompleted("supervisor");
+
+
+    const selectedAgents =
+        Array.isArray(data.selected_agents)
+            ? data.selected_agents
+            : [];
+
+
+    const specialistAgents = [
+        "flight_agent",
+        "hotel_agent",
+        "weather_agent",
+        "budget_agent",
+        "itinerary_agent"
+    ];
+
+
+    specialistAgents.forEach(agent => {
+
+        if (selectedAgents.includes(agent)) {
+
+            setAgentCompleted(agent);
+
+        } else {
+
+            setAgentSkipped(agent);
+        }
+    });
+
+
+    /*
+        Backend pauses at human_approval.
+    */
+
+    if (data.requires_approval) {
+
+        setHumanWaiting();
+
+        showApproval(data);
+
+        hideElement("resultSection");
+
+        scrollToSection("approvalSection");
+
+        return;
+    }
+
+
+    /*
+        Guardrail blocked request.
+    */
+
+    if (data.guardrail_allowed === false) {
+
+        setWorkflowComplete();
+
+        showError(
+            data.guardrail_reason ||
+            data.answer ||
+            "This request is outside the scope of TravelMate AI."
+        );
+
+        return;
+    }
+
+
+    /*
+        Normal final response.
+    */
+
+    setWorkflowComplete();
+
+    displayFinalResults(data);
+}
+
+
+/* =========================================================
+   APPROVAL UI
+========================================================= */
+
+function showApproval(data) {
+
+    const approvalSection =
+        getElement("approvalSection");
+
+    if (!approvalSection) {
+        return;
+    }
+
+
+    const approvalRequest =
+        getElement("approvalRequest");
+
+    const draftItinerary =
+        getElement("draftItinerary");
+
+    const feedback =
+        getElement("humanFeedback");
+
+
+    if (approvalRequest) {
+
+        approvalRequest.textContent =
+            data.approval_request ||
+            "Please review the generated draft itinerary.";
+    }
+
+
+    if (draftItinerary) {
+
+        draftItinerary.innerHTML =
+            renderMarkdown(
+                data.itinerary ||
+                data.answer ||
+                "No draft itinerary was returned."
+            );
+    }
+
+
+    if (feedback) {
+        feedback.value = "";
+    }
+
+
+    showElement("approvalSection");
+}
+
+
+/* =========================================================
+   APPROVE PLAN
+========================================================= */
+
+async function approvePlan() {
+
+    if (isProcessing) {
+        return;
+    }
+
+    if (!currentThreadId) {
+
+        showError(
+            "The travel planning session could not be found. Please generate the plan again."
+        );
+
+        return;
+    }
+
+
+    const feedback =
+        getElement("humanFeedback")?.value.trim() || "";
+
+
+    await submitApproval(
+        true,
+        feedback
+    );
+}
+
+
+/* =========================================================
+   REJECT / REQUEST REVISION
+========================================================= */
+
+async function rejectPlan() {
+
+    if (isProcessing) {
+        return;
+    }
+
+
+    const feedback =
+        getElement("humanFeedback")?.value.trim() || "";
+
+
+    if (!feedback) {
+
+        showError(
+            "Please provide revision feedback before requesting a new version."
+        );
+
+        getElement("humanFeedback")?.focus();
+
+        return;
+    }
+
+
+    if (!currentThreadId) {
+
+        showError(
+            "The travel planning session could not be found. Please generate the plan again."
+        );
+
+        return;
+    }
+
+
+    await submitApproval(
+        false,
+        feedback
+    );
+}
+
+
+/* =========================================================
+   SUBMIT HUMAN APPROVAL
+========================================================= */
+
+async function submitApproval(
+    approved,
+    feedback
+) {
+
+    isProcessing = true;
+
+    clearError();
+
+    setApprovalButtonsLoading(true);
+
+    setAgentActive("human_review");
+
+
+    try {
+
+        const response = await fetch(
+            "/api/travel/approve",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    thread_id: currentThreadId,
+                    approved: approved,
+                    feedback: feedback
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.error ||
+                "Unable to continue the travel plan."
+            );
+        }
+
+
+        latestTravelData = data;
+
+
+        /*
+            If rejected, backend may theoretically
+            pause again depending on workflow changes.
+        */
+
+        if (data.requires_approval) {
+
+            setHumanWaiting();
+
+            showApproval(data);
+
+            return;
+        }
+
+
+        setAgentCompleted("human_review");
+
+        setAgentCompleted("itinerary_agent");
+
+        setWorkflowComplete();
+
+        hideElement("approvalSection");
+
+        displayFinalResults(data);
+
+    } catch (error) {
+
+        console.error(error);
+
+        showError(
+            error.message ||
+            "Unable to submit your review."
+        );
+
+        setAgentActive("human_review");
+
+    } finally {
+
+        isProcessing = false;
+
+        setApprovalButtonsLoading(false);
+    }
+}
+
+
+/* =========================================================
+   APPROVAL BUTTON LOADING
+========================================================= */
+
+function setApprovalButtonsLoading(loading) {
+
+    const approveBtn =
+        getElement("approveBtn");
+
+    const rejectBtn =
+        getElement("rejectBtn");
+
+
+    if (approveBtn) {
+        approveBtn.disabled = loading;
+    }
+
+    if (rejectBtn) {
+        rejectBtn.disabled = loading;
+    }
+
+
+    if (loading) {
+
+        if (approveBtn) {
+            approveBtn.dataset.originalText =
+                approveBtn.innerHTML;
+
+            approveBtn.innerHTML =
+                `<span class="loader"></span> Processing...`;
+        }
+
+        if (rejectBtn) {
+            rejectBtn.dataset.originalText =
+                rejectBtn.innerHTML;
+
+            rejectBtn.innerHTML =
+                `<span class="loader"></span> Revising...`;
+        }
+
+    } else {
+
+        if (approveBtn?.dataset.originalText) {
+
+            approveBtn.innerHTML =
+                approveBtn.dataset.originalText;
+        }
+
+        if (rejectBtn?.dataset.originalText) {
+
+            rejectBtn.innerHTML =
+                rejectBtn.dataset.originalText;
+        }
+    }
+}
+
+
+/* =========================================================
+   DISPLAY FINAL RESULTS
+========================================================= */
+
+function displayFinalResults(data) {
+
+    latestAnswerMarkdown =
+        data.answer ||
+        data.final_response ||
+        data.itinerary ||
+        "";
+
+
+    const resultBox =
+        getElement("resultBox");
+
+    const flightBox =
+        getElement("flightBox");
+
+    const hotelBox =
+        getElement("hotelBox");
+
+    const weatherBox =
+        getElement("weatherBox");
+
+    const budgetBox =
+        getElement("budgetBox");
+
+    const itineraryBox =
+        getElement("itineraryBox");
+
+
+    if (resultBox) {
+
+        resultBox.innerHTML =
+            renderMarkdown(
+                latestAnswerMarkdown
+            );
+    }
+
+
+    if (flightBox) {
+
+        flightBox.innerHTML =
+            renderMarkdown(
+                data.flight_results
+            );
+    }
+
+
+    if (hotelBox) {
+
+        hotelBox.innerHTML =
+            renderMarkdown(
+                data.hotel_results
+            );
+    }
+
+
+    if (weatherBox) {
+
+        weatherBox.innerHTML =
+            renderMarkdown(
+                data.weather_results
+            );
+    }
+
+
+    if (budgetBox) {
+
+        budgetBox.innerHTML =
+            renderMarkdown(
+                data.budget_results
+            );
+    }
+
+
+    if (itineraryBox) {
+
+        itineraryBox.innerHTML =
+            renderMarkdown(
+                data.itinerary
+            );
+    }
+
+
+    updateSummary(data);
+
+    updateAgentDetails(data);
+
+    showElement("resultSection");
+
+    switchTab("overview");
+
+    scrollToSection("resultSection");
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+function updateSummary(data) {
+
+    const flightSummary =
+        getElement("flightSummary");
+
+    const hotelSummary =
+        getElement("hotelSummary");
+
+    const weatherSummary =
+        getElement("weatherSummary");
+
+    const budgetSummary =
+        getElement("budgetSummary");
+
+    const itinerarySummary =
+        getElement("itinerarySummary");
+
+
+    if (flightSummary) {
+
+        flightSummary.textContent =
+            data.flight_results
+                ? "AI researched"
+                : "Not selected";
+    }
+
+
+    if (hotelSummary) {
+
+        hotelSummary.textContent =
+            data.hotel_results
+                ? "AI researched"
+                : "Not selected";
+    }
+
+
+    if (weatherSummary) {
+
+        weatherSummary.textContent =
+            data.weather_results
+                ? "AI researched"
+                : "Not selected";
+    }
+
+
+    if (budgetSummary) {
+
+        budgetSummary.textContent =
+            data.budget_results
+                ? "Analysed"
+                : "Not selected";
+    }
+
+
+    if (itinerarySummary) {
+
+        itinerarySummary.textContent =
+            data.itinerary
+                ? "Generated"
+                : "Not available";
+    }
+
+
+    const threadInfo =
+        getElement("threadInfo");
+
+    if (threadInfo) {
+
+        threadInfo.textContent =
+            data.thread_id
+                ? `Thread ID: ${data.thread_id}`
+                : "Thread ID: —";
+    }
+}
+
+
+/* =========================================================
+   AI DETAILS
+========================================================= */
+
+function updateAgentDetails(data) {
+
+    const selectedAgents =
+        getElement("selectedAgents");
+
+    const llmCalls =
+        getElement("llmCalls");
+
+    const supervisorReasoning =
+        getElement("supervisorReasoning");
+
+    const tripConstraints =
+        getElement("tripConstraints");
+
+
+    const agents =
+        Array.isArray(data.selected_agents)
+            ? data.selected_agents
+            : [];
+
+
+    if (selectedAgents) {
+
+        selectedAgents.textContent =
+            agents.length
+                ? agents.join(" → ")
+                : "No specialist agents selected";
+    }
+
+
+    if (llmCalls) {
+
+        llmCalls.textContent =
+            data.llm_calls ?? 0;
+    }
+
+
+    if (supervisorReasoning) {
+
+        supervisorReasoning.innerHTML =
+            renderMarkdown(
+                data.supervisor_reasoning ||
+                "No supervisor reasoning was returned."
+            );
+    }
+
+
+    if (tripConstraints) {
+
+        tripConstraints.innerHTML =
+            buildConstraintsHTML(
+                data.trip_constraints || {}
+            );
+    }
+}
+
+
+/* =========================================================
+   TRIP CONSTRAINTS
+========================================================= */
+
+function buildConstraintsHTML(
+    constraints
+) {
+
+    const fields = [
+        ["Destination", constraints.destination],
+        ["Origin", constraints.origin],
+        ["Duration", constraints.duration],
+        ["Budget", constraints.budget],
+        ["Travel Style", constraints.travel_style]
+    ];
+
+
+    let html = "";
+
+
+    fields.forEach(([label, value]) => {
+
+        html += `
+            <div class="constraint-item">
+                <span>${escapeHtml(label)}</span>
+                <strong>
+                    ${escapeHtml(value || "Not specified")}
+                </strong>
+            </div>
+        `;
+    });
+
+
+    const preferences =
+        Array.isArray(
+            constraints.special_preferences
+        )
+            ? constraints.special_preferences
+            : [];
+
+
+    html += `
+        <div class="constraint-item">
+            <span>Preferences</span>
+            <strong>
+                ${
+                    preferences.length
+                        ? escapeHtml(
+                            preferences.join(", ")
+                        )
+                        : "None specified"
+                }
+            </strong>
+        </div>
+    `;
+
+
+    return html;
+}
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+function switchTab(tabName) {
+
+    const tabs =
+        document.querySelectorAll(".result-tab");
+
+    const contents =
+        document.querySelectorAll(".tab-content");
+
+
+    tabs.forEach(tab => {
+
+        tab.classList.toggle(
+            "active",
+            tab.dataset.tab === tabName
+        );
+    });
+
+
+    contents.forEach(content => {
+
+        content.classList.toggle(
+            "active",
+            content.id === `tab-${tabName}`
+        );
+    });
+}
 
 
 /* =========================================================
@@ -907,21 +1357,16 @@ async function sendMessage() {
 
 async function copyResult() {
 
-    const resultBox =
-        document.getElementById("resultBox");
-
-
-    if (!resultBox) return;
-
-
     const text =
-        resultBox.innerText.trim();
+        latestAnswerMarkdown ||
+        latestTravelData?.answer ||
+        "";
 
 
     if (!text) {
 
         showError(
-            "No travel plan available to copy."
+            "There is no generated travel plan to copy."
         );
 
         return;
@@ -930,48 +1375,41 @@ async function copyResult() {
 
     try {
 
-        await navigator.clipboard.writeText(
-            text
+        await navigator.clipboard.writeText(text);
+
+        showTemporaryMessage(
+            "Travel plan copied to clipboard."
         );
-
-
-        const button =
-            document.querySelector(
-                ".copy-btn"
-            );
-
-
-        if (!button) return;
-
-
-        const oldHTML =
-            button.innerHTML;
-
-
-        button.innerHTML =
-            "✓ Copied";
-
-
-        setTimeout(() => {
-
-            button.innerHTML =
-                oldHTML;
-
-        }, 1500);
-
 
     } catch (error) {
 
         console.error(error);
 
-        showError(
-            "Could not copy the travel plan."
+        /*
+            Clipboard fallback
+        */
+
+        const textarea =
+            document.createElement("textarea");
+
+        textarea.value = text;
+
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+
+        showTemporaryMessage(
+            "Travel plan copied."
         );
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -980,17 +1418,14 @@ async function copyResult() {
 
 function downloadPDF() {
 
-    const pdfContent =
-        document.getElementById("pdfContent");
+    const content =
+        getElement("pdfContent");
 
 
-    if (
-        !pdfContent ||
-        !latestAnswerMarkdown
-    ) {
+    if (!content) {
 
         showError(
-            "No travel plan available to download."
+            "Travel plan content is not available."
         );
 
         return;
@@ -998,36 +1433,15 @@ function downloadPDF() {
 
 
     if (
-        typeof html2pdf === "undefined"
+        typeof html2pdf ===
+        "undefined"
     ) {
 
         showError(
-            "PDF library could not be loaded. Please check your internet connection."
+            "PDF generator is not available. Please check your internet connection."
         );
 
         return;
-    }
-
-
-    const button =
-        document.querySelector(
-            ".download-btn"
-        );
-
-
-    const oldHTML =
-        button
-            ? button.innerHTML
-            : "";
-
-
-    if (button) {
-
-        button.innerHTML =
-            "Preparing...";
-
-        button.disabled = true;
-
     }
 
 
@@ -1036,71 +1450,72 @@ function downloadPDF() {
         margin: 0.45,
 
         filename:
-            "tripmate-ai-travel-plan.pdf",
+            "TravelMate-AI-Travel-Plan.pdf",
 
         image: {
-
             type: "jpeg",
-
-            quality: 0.98
-
+            quality: 0.96
         },
 
         html2canvas: {
-
             scale: 2,
 
             useCORS: true,
 
-            backgroundColor: "#ffffff",
-
-            scrollY: 0
-
+            backgroundColor: "#07111f"
         },
 
         jsPDF: {
-
             unit: "in",
-
             format: "a4",
-
             orientation: "portrait"
-
         },
 
         pagebreak: {
-
             mode: [
+                "avoid-all",
                 "css",
                 "legacy"
             ]
-
         }
-
     };
 
 
+    /*
+        Temporarily show all tabs so the complete
+        travel plan is included in PDF.
+    */
+
+    const tabs =
+        content.querySelectorAll(
+            ".tab-content"
+        );
+
+
+    tabs.forEach(tab => {
+
+        tab.dataset.pdfDisplay =
+            tab.style.display;
+
+        tab.style.display = "block";
+    });
+
+
     html2pdf()
-
         .set(options)
-
-        .from(pdfContent)
-
+        .from(content)
         .save()
-
         .then(() => {
 
-            if (button) {
+            tabs.forEach(tab => {
 
-                button.innerHTML =
-                    oldHTML;
+                tab.style.display =
+                    tab.dataset.pdfDisplay || "";
 
-                button.disabled = false;
-
-            }
+                delete tab.dataset.pdfDisplay;
+            });
 
         })
-
         .catch(error => {
 
             console.error(
@@ -1108,25 +1523,168 @@ function downloadPDF() {
                 error
             );
 
+            tabs.forEach(tab => {
 
-            if (button) {
+                tab.style.display =
+                    tab.dataset.pdfDisplay || "";
 
-                button.innerHTML =
-                    oldHTML;
-
-                button.disabled = false;
-
-            }
-
+                delete tab.dataset.pdfDisplay;
+            });
 
             showError(
-                "Could not generate the PDF."
+                "Unable to create the PDF."
             );
-
         });
-
 }
 
+
+/* =========================================================
+   ERROR HANDLING
+========================================================= */
+
+function showError(message) {
+
+    const errorBox =
+        getElement("errorBox");
+
+    if (!errorBox) {
+        return;
+    }
+
+
+    errorBox.innerHTML =
+        `<strong>Something went wrong:</strong> ${escapeHtml(message)}`;
+
+    errorBox.classList.remove("hidden");
+
+    scrollToSection("errorBox");
+}
+
+
+function clearError() {
+
+    const errorBox =
+        getElement("errorBox");
+
+    if (!errorBox) {
+        return;
+    }
+
+    errorBox.textContent = "";
+
+    errorBox.classList.add("hidden");
+}
+
+
+function setWorkflowError() {
+
+    const workflowStatus =
+        getElement("workflowStatus");
+
+    const workflowText =
+        getElement("workflowStatusText");
+
+
+    workflowStatus?.classList.remove(
+        "processing",
+        "waiting",
+        "complete"
+    );
+
+
+    if (workflowText) {
+        workflowText.textContent =
+            "Request failed";
+    }
+}
+
+
+/* =========================================================
+   TEMPORARY MESSAGE
+========================================================= */
+
+function showTemporaryMessage(message) {
+
+    const existing =
+        document.querySelector(
+            ".temporary-message"
+        );
+
+
+    existing?.remove();
+
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "temporary-message";
+
+
+    element.textContent = message;
+
+
+    Object.assign(
+        element.style,
+        {
+            position: "fixed",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: "9999",
+            padding: "11px 15px",
+            border: "1px solid rgba(52,211,153,.2)",
+            borderRadius: "10px",
+            background: "#0d1a2c",
+            color: "#d1fae5",
+            fontSize: "12px",
+            boxShadow: "0 15px 40px rgba(0,0,0,.3)"
+        }
+    );
+
+
+    document.body.appendChild(element);
+
+
+    setTimeout(() => {
+
+        element.style.opacity = "0";
+
+        element.style.transition =
+            "opacity .25s ease";
+
+        setTimeout(
+            () => element.remove(),
+            250
+        );
+
+    }, 1800);
+}
+
+
+/* =========================================================
+   SCROLL
+========================================================= */
+
+function scrollToSection(id) {
+
+    const element =
+        getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+
+    setTimeout(() => {
+
+        element.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }, 100);
+}
 
 
 /* =========================================================
@@ -1135,7 +1693,7 @@ function downloadPDF() {
 
 document.addEventListener(
     "keydown",
-    function(event) {
+    event => {
 
         if (
             event.ctrlKey &&
@@ -1145,58 +1703,80 @@ document.addEventListener(
             event.preventDefault();
 
             sendMessage();
-
         }
-
     }
 );
 
 
-
 /* =========================================================
-   INITIALIZATION
+   INPUT LISTENERS
 ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
-    function() {
+    () => {
 
         const input =
-            document.getElementById(
-                "userInput"
-            );
+            getElement("userInput");
 
 
         if (input) {
 
             input.addEventListener(
                 "input",
-                updateCharCount
+                updateCharacterCount
             );
 
-
-            updateCharCount();
-
-
-            input.addEventListener(
-                "keydown",
-                function(event) {
-
-                    if (
-                        event.key === "Enter" &&
-                        event.ctrlKey
-                    ) {
-
-                        event.preventDefault();
-
-                        sendMessage();
-
-                    }
-
-                }
-            );
-
+            updateCharacterCount();
         }
 
+
+        /*
+            If marked is available, configure it.
+        */
+
+        if (
+            typeof marked !== "undefined" &&
+            marked.use
+        ) {
+
+            marked.use({
+                breaks: true,
+                gfm: true
+            });
+        }
     }
 );
+
+
+/* =========================================================
+   PAGE INITIALIZATION
+========================================================= */
+
+function initializePage() {
+
+    updateCharacterCount();
+
+    hideElement("agentSection");
+
+    hideElement("approvalSection");
+
+    hideElement("resultSection");
+
+    clearError();
+}
+
+
+if (
+    document.readyState === "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializePage
+    );
+
+} else {
+
+    initializePage();
+}

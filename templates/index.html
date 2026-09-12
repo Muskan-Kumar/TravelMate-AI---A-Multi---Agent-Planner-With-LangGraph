@@ -10,7 +10,7 @@
 
     <meta
         name="description"
-        content="TripMate AI - Multi-Agent AI Travel Planner"
+        content="TravelMate AI - Intelligent multi-agent travel planning system"
     >
 
     <title>TravelMate AI — Multi-Agent Travel Planner</title>
@@ -23,26 +23,34 @@
 
 <body>
 
-    <!-- Background -->
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
+
     <div class="background">
         <div class="orb orb-one"></div>
         <div class="orb orb-two"></div>
         <div class="orb orb-three"></div>
+        <div class="grid-overlay"></div>
     </div>
 
 
-    <!-- NAVBAR -->
+    <!-- =====================================================
+         NAVBAR
+    ====================================================== -->
+
     <header class="navbar">
 
         <div class="nav-inner">
 
-            <div class="brand">
+            <a href="/" class="brand">
 
                 <div class="brand-icon">
-                    ✦
+                    ✈️
                 </div>
 
-                <div>
+                <div class="brand-copy">
+
                     <div class="brand-name">
                         TravelMate<span>AI</span>
                     </div>
@@ -50,16 +58,17 @@
                     <div class="brand-subtitle">
                         Multi-Agent Travel Intelligence
                     </div>
+
                 </div>
 
-            </div>
+            </a>
 
 
             <div class="nav-right">
 
                 <div class="system-status">
                     <span class="status-dot"></span>
-                    AI System Online
+                    <span>AI System Online</span>
                 </div>
 
             </div>
@@ -69,15 +78,22 @@
     </header>
 
 
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
     <main class="main-container">
 
 
-        <!-- HERO -->
+        <!-- =================================================
+             HERO
+        ================================================== -->
+
         <section class="hero">
 
             <div class="hero-badge">
-                <span class="spark">✦</span>
-                Powered by LangGraph Multi-Agent AI
+                <span class="spark">✈️</span>
+                TravelMate AI - LangGraph, MCP, Supervisor, Guardrails & HITL
             </div>
 
 
@@ -88,16 +104,49 @@
 
 
             <p class="hero-description">
-                Tell TravelMate where you want to go, and our AI agents
-                research flights, discover hotels and build a complete
-                day-by-day itinerary for you.
+                Tell TravelMate where you want to go. Specialized AI agents
+                research flights, hotels, weather and budget, then create
+                a practical day-by-day itinerary for human review.
             </p>
+
+
+            <div class="hero-features">
+
+                <div class="hero-feature">
+                    <span>✈</span>
+                    Flight Research
+                </div>
+
+                <div class="hero-feature">
+                    <span>◆</span>
+                    Hotel Discovery
+                </div>
+
+                <div class="hero-feature">
+                    <span>☁</span>
+                    Weather Intelligence
+                </div>
+
+                <div class="hero-feature">
+                    <span>₹</span>
+                    Budget Analysis
+                </div>
+
+                <div class="hero-feature">
+                    <span>◷</span>
+                    Smart Itinerary
+                </div>
+
+            </div>
 
         </section>
 
 
 
-        <!-- PLANNER -->
+        <!-- =================================================
+             PLANNER CARD
+        ================================================== -->
+
         <section class="planner-card">
 
             <div class="planner-top">
@@ -113,15 +162,15 @@
                     </h2>
 
                     <p>
-                        Describe your trip naturally. TripMate AI will
-                        handle the planning.
+                        Describe your trip naturally. TravelMate AI will
+                        decide which specialist agents are needed.
                     </p>
 
                 </div>
 
 
                 <div class="planner-ai-badge">
-                    <span>●</span>
+                    <span class="ai-dot"></span>
                     Multi-Agent
                 </div>
 
@@ -133,7 +182,7 @@
                 <textarea
                     id="userInput"
                     maxlength="2000"
-                    placeholder="Example: Plan a 7-day trip to Nepal from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food and local transport..."
+                    placeholder="Example: Plan a 7-day trip to Nepal from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food, weather and local transport..."
                 ></textarea>
 
 
@@ -143,7 +192,7 @@
                         0 / 2000
                     </span>
 
-                    <span>
+                    <span class="keyboard-hint">
                         Ctrl + Enter to plan
                     </span>
 
@@ -155,6 +204,7 @@
             <button
                 id="sendBtn"
                 class="generate-btn"
+                type="button"
                 onclick="sendMessage()"
             >
 
@@ -175,6 +225,7 @@
 
 
             <!-- QUICK PROMPTS -->
+
             <div class="quick-section">
 
                 <span class="quick-label">
@@ -185,28 +236,32 @@
                 <div class="quick-prompts">
 
                     <button
-                        onclick="setPrompt('Plan a 7-day Nepal trip from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food and local transport.')"
+                        type="button"
+                        onclick="setPrompt('Plan a 7-day Nepal trip from India for 2 people under ₹2 lakhs, including flights, hotels, sightseeing, food, weather and local transport.')"
                     >
                         🇳🇵 Nepal
                     </button>
 
 
                     <button
-                        onclick="setPrompt('Plan a 7-day Japan trip from India for 2 people including flights, hotels, sightseeing, food and local transport.')"
+                        type="button"
+                        onclick="setPrompt('Plan a 7-day Japan trip from India for 2 people including flights, hotels, weather, sightseeing, food and local transport.')"
                     >
                         🇯🇵 Japan
                     </button>
 
 
                     <button
-                        onclick="setPrompt('Plan a 5-day Dubai trip from India for 2 people including flights, hotels and sightseeing.')"
+                        type="button"
+                        onclick="setPrompt('Plan a 5-day Dubai trip from India for 2 people including flights, hotels, weather and sightseeing.')"
                     >
                         🇦🇪 Dubai
                     </button>
 
 
                     <button
-                        onclick="setPrompt('Plan a 7-day Thailand trip from India for 2 people with budget hotels and sightseeing.')"
+                        type="button"
+                        onclick="setPrompt('Plan a 7-day Thailand trip from India for 2 people with budget hotels, weather information and sightseeing.')"
                     >
                         🇹🇭 Thailand
                     </button>
@@ -219,7 +274,10 @@
 
 
 
-        <!-- AGENT WORKFLOW -->
+        <!-- =================================================
+             AGENT WORKFLOW
+        ================================================== -->
+
         <section
             id="agentSection"
             class="agent-section hidden"
@@ -237,22 +295,82 @@
                         Your trip is being planned by AI agents
                     </h2>
 
+                    <p class="section-description">
+                        TravelMate is coordinating specialized agents for
+                        your request.
+                    </p>
+
                 </div>
 
-                <div class="workflow-status">
+
+                <div
+                    id="workflowStatus"
+                    class="workflow-status processing"
+                >
                     <span class="pulse"></span>
-                    Processing
+                    <span id="workflowStatusText">
+                        Processing
+                    </span>
                 </div>
 
             </div>
 
 
+            <!-- WORKFLOW PIPELINE -->
+
+            <div class="workflow-line"></div>
+
+
             <div class="agent-grid">
+
+
+                <!-- SUPERVISOR -->
+
+                <div
+                    id="agentSupervisor"
+                    class="agent-card"
+                    data-agent="supervisor"
+                >
+
+                    <div class="agent-number">
+                        01
+                    </div>
+
+                    <div class="agent-icon supervisor-icon">
+                        ✦
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>
+                            Supervisor
+                        </h3>
+
+                        <p>
+                            Routing your request
+                        </p>
+
+                    </div>
+
+                    <div class="agent-status-icon">
+                        <span>•</span>
+                    </div>
+
+                </div>
+
+
+
+                <!-- FLIGHT -->
 
                 <div
                     id="agentFlight"
                     class="agent-card"
+                    data-agent="flight_agent"
                 >
+
+                    <div class="agent-number">
+                        02
+                    </div>
 
                     <div class="agent-icon flight-icon">
                         ✈
@@ -260,7 +378,9 @@
 
                     <div class="agent-info">
 
-                        <h3>Flight Agent</h3>
+                        <h3>
+                            Flight Agent
+                        </h3>
 
                         <p>
                             Searching flight options
@@ -268,17 +388,25 @@
 
                     </div>
 
-                    <div class="agent-check">
-                        ✓
+                    <div class="agent-status-icon">
+                        <span>•</span>
                     </div>
 
                 </div>
 
 
+
+                <!-- HOTEL -->
+
                 <div
                     id="agentHotel"
                     class="agent-card"
+                    data-agent="hotel_agent"
                 >
+
+                    <div class="agent-number">
+                        03
+                    </div>
 
                     <div class="agent-icon hotel-icon">
                         ◆
@@ -286,7 +414,9 @@
 
                     <div class="agent-info">
 
-                        <h3>Hotel Agent</h3>
+                        <h3>
+                            Hotel Agent
+                        </h3>
 
                         <p>
                             Finding suitable stays
@@ -294,51 +424,107 @@
 
                     </div>
 
-                    <div class="agent-check">
-                        ✓
+                    <div class="agent-status-icon">
+                        <span>•</span>
                     </div>
 
                 </div>
 
 
+
+                <!-- WEATHER -->
+
                 <div
-                    id="agentResearch"
+                    id="agentWeather"
                     class="agent-card"
+                    data-agent="weather_agent"
                 >
 
-                    <div class="agent-icon research-icon">
-                        ◉
+                    <div class="agent-number">
+                        04
+                    </div>
+
+                    <div class="agent-icon weather-icon">
+                        ☁
                     </div>
 
                     <div class="agent-info">
 
-                        <h3>Research Agent</h3>
+                        <h3>
+                            Weather Agent
+                        </h3>
 
                         <p>
-                            Researching destinations
+                            Checking weather & forecast
                         </p>
 
                     </div>
 
-                    <div class="agent-check">
-                        ✓
+                    <div class="agent-status-icon">
+                        <span>•</span>
                     </div>
 
                 </div>
 
 
+
+                <!-- BUDGET -->
+
                 <div
-                    id="agentPlanner"
+                    id="agentBudget"
                     class="agent-card"
+                    data-agent="budget_agent"
                 >
 
-                    <div class="agent-icon planner-icon">
-                        ✦
+                    <div class="agent-number">
+                        05
+                    </div>
+
+                    <div class="agent-icon budget-icon">
+                        ₹
                     </div>
 
                     <div class="agent-info">
 
-                        <h3>Itinerary Agent</h3>
+                        <h3>
+                            Budget Agent
+                        </h3>
+
+                        <p>
+                            Analysing trip feasibility
+                        </p>
+
+                    </div>
+
+                    <div class="agent-status-icon">
+                        <span>•</span>
+                    </div>
+
+                </div>
+
+
+
+                <!-- ITINERARY -->
+
+                <div
+                    id="agentPlanner"
+                    class="agent-card"
+                    data-agent="itinerary_agent"
+                >
+
+                    <div class="agent-number">
+                        06
+                    </div>
+
+                    <div class="agent-icon planner-icon">
+                        ◷
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>
+                            Itinerary Agent
+                        </h3>
 
                         <p>
                             Building your itinerary
@@ -346,8 +532,44 @@
 
                     </div>
 
-                    <div class="agent-check">
-                        ✓
+                    <div class="agent-status-icon">
+                        <span>•</span>
+                    </div>
+
+                </div>
+
+
+
+                <!-- HUMAN REVIEW -->
+
+                <div
+                    id="agentHuman"
+                    class="agent-card human-agent-card"
+                    data-agent="human_review"
+                >
+
+                    <div class="agent-number">
+                        07
+                    </div>
+
+                    <div class="agent-icon human-icon">
+                        ◉
+                    </div>
+
+                    <div class="agent-info">
+
+                        <h3>
+                            Human Review
+                        </h3>
+
+                        <p>
+                            Your approval is required
+                        </p>
+
+                    </div>
+
+                    <div class="agent-status-icon">
+                        <span>•</span>
                     </div>
 
                 </div>
@@ -358,21 +580,157 @@
 
 
 
-        <!-- ERROR -->
+        <!-- =================================================
+             ERROR
+        ================================================== -->
+
         <section
             id="errorBox"
             class="error-box hidden"
+            role="alert"
         ></section>
 
 
 
-        <!-- RESULTS -->
+        <!-- =================================================
+             HUMAN APPROVAL
+        ================================================== -->
+
+        <section
+            id="approvalSection"
+            class="approval-section hidden"
+        >
+
+            <div class="approval-header">
+
+                <div class="approval-icon">
+                    ◉
+                </div>
+
+                <div>
+
+                    <span class="section-eyebrow">
+                        HUMAN-IN-THE-LOOP
+                    </span>
+
+                    <h2>
+                        Review your travel plan
+                    </h2>
+
+                    <p>
+                        The AI has prepared a draft itinerary. Review it
+                        before the final plan is generated.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="approval-notice">
+
+                <div class="notice-icon">
+                    ✓
+                </div>
+
+                <div>
+                    <strong>
+                        Your approval is required
+                    </strong>
+
+                    <p id="approvalRequest">
+                        Please review the generated draft itinerary.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="draft-preview">
+
+                <div class="draft-header">
+
+                    <div>
+                        <span class="draft-label">
+                            AI GENERATED DRAFT
+                        </span>
+
+                        <h3>
+                            Proposed itinerary
+                        </h3>
+                    </div>
+
+                    <span class="draft-status">
+                        Awaiting review
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="draftItinerary"
+                    class="markdown-content"
+                ></div>
+
+            </div>
+
+
+            <div class="feedback-area">
+
+                <label for="humanFeedback">
+                    Revision feedback
+                    <span>Optional when approving</span>
+                </label>
+
+                <textarea
+                    id="humanFeedback"
+                    maxlength="3000"
+                    placeholder="Example: Reduce hotel cost, add more sightseeing, change Day 3 activities, or make the itinerary more relaxed..."
+                ></textarea>
+
+            </div>
+
+
+            <div class="approval-actions">
+
+                <button
+                    id="rejectBtn"
+                    class="approval-reject-btn"
+                    type="button"
+                    onclick="rejectPlan()"
+                >
+                    <span>↻</span>
+                    Request Revision
+                </button>
+
+
+                <button
+                    id="approveBtn"
+                    class="approval-approve-btn"
+                    type="button"
+                    onclick="approvePlan()"
+                >
+                    <span>✓</span>
+                    Approve & Generate Final Plan
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             RESULTS
+        ================================================== -->
+
         <section
             id="resultSection"
             class="results hidden"
         >
 
-            <!-- Result Header -->
+            <!-- RESULT HEADER -->
+
             <div class="results-header">
 
                 <div>
@@ -395,7 +753,8 @@
                 <div class="result-actions">
 
                     <button
-                        class="secondary-btn copy-btn"
+                        class="secondary-btn"
+                        type="button"
                         onclick="copyResult()"
                     >
                         <span>⧉</span>
@@ -404,10 +763,11 @@
 
 
                     <button
-                        class="primary-small-btn download-btn"
+                        class="primary-small-btn"
+                        type="button"
                         onclick="downloadPDF()"
                     >
-                        ↓
+                        <span>↓</span>
                         Download PDF
                     </button>
 
@@ -417,8 +777,10 @@
 
 
 
-            <!-- Agent Summary -->
+            <!-- RESULT SUMMARY -->
+
             <div class="agent-summary">
+
 
                 <div class="summary-item">
 
@@ -428,6 +790,7 @@
 
                     <div>
                         <span>Flights</span>
+
                         <strong id="flightSummary">
                             AI researched
                         </strong>
@@ -447,8 +810,49 @@
 
                     <div>
                         <span>Hotels</span>
+
                         <strong id="hotelSummary">
                             AI researched
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="summary-divider"></div>
+
+
+                <div class="summary-item">
+
+                    <div class="summary-symbol">
+                        ☁
+                    </div>
+
+                    <div>
+                        <span>Weather</span>
+
+                        <strong id="weatherSummary">
+                            AI researched
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="summary-divider"></div>
+
+
+                <div class="summary-item">
+
+                    <div class="summary-symbol">
+                        ₹
+                    </div>
+
+                    <div>
+                        <span>Budget</span>
+
+                        <strong id="budgetSummary">
+                            Analysed
                         </strong>
                     </div>
 
@@ -466,6 +870,7 @@
 
                     <div>
                         <span>Itinerary</span>
+
                         <strong id="itinerarySummary">
                             Generated
                         </strong>
@@ -478,11 +883,13 @@
 
 
             <!-- TABS -->
+
             <div class="result-tabs">
 
                 <button
                     class="result-tab active"
                     data-tab="overview"
+                    type="button"
                     onclick="switchTab('overview')"
                 >
                     Overview
@@ -492,6 +899,7 @@
                 <button
                     class="result-tab"
                     data-tab="flights"
+                    type="button"
                     onclick="switchTab('flights')"
                 >
                     ✈ Flights
@@ -501,6 +909,7 @@
                 <button
                     class="result-tab"
                     data-tab="hotels"
+                    type="button"
                     onclick="switchTab('hotels')"
                 >
                     ◆ Hotels
@@ -509,7 +918,28 @@
 
                 <button
                     class="result-tab"
+                    data-tab="weather"
+                    type="button"
+                    onclick="switchTab('weather')"
+                >
+                    ☁ Weather
+                </button>
+
+
+                <button
+                    class="result-tab"
+                    data-tab="budget"
+                    type="button"
+                    onclick="switchTab('budget')"
+                >
+                    ₹ Budget
+                </button>
+
+
+                <button
+                    class="result-tab"
                     data-tab="itinerary"
+                    type="button"
                     onclick="switchTab('itinerary')"
                 >
                     ◷ Itinerary
@@ -519,6 +949,7 @@
                 <button
                     class="result-tab"
                     data-tab="agents"
+                    type="button"
                     onclick="switchTab('agents')"
                 >
                     ✦ AI Details
@@ -528,7 +959,10 @@
 
 
 
-            <!-- PDF CONTENT -->
+            <!-- =================================================
+                 PDF CONTENT
+            ================================================== -->
+
             <div
                 id="pdfContent"
                 class="pdf-content"
@@ -540,14 +974,36 @@
 
 
                 <!-- OVERVIEW -->
+
                 <div
                     id="tab-overview"
                     class="tab-content active"
                 >
 
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ✦
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Complete Travel Plan
+                            </h3>
+
+                            <p>
+                                Your final AI-generated travel recommendation.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
                     <div
                         id="resultBox"
-                        class="result-box"
+                        class="result-box markdown-content"
                     ></div>
 
                 </div>
@@ -555,6 +1011,7 @@
 
 
                 <!-- FLIGHTS -->
+
                 <div
                     id="tab-flights"
                     class="tab-content"
@@ -583,7 +1040,7 @@
 
                     <div
                         id="flightBox"
-                        class="data-box"
+                        class="data-box markdown-content"
                     ></div>
 
                 </div>
@@ -591,6 +1048,7 @@
 
 
                 <!-- HOTELS -->
+
                 <div
                     id="tab-hotels"
                     class="tab-content"
@@ -619,7 +1077,81 @@
 
                     <div
                         id="hotelBox"
-                        class="data-box"
+                        class="data-box markdown-content"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- WEATHER -->
+
+                <div
+                    id="tab-weather"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ☁
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Weather Intelligence
+                            </h3>
+
+                            <p>
+                                Current weather and forecast information for your destination.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="weatherBox"
+                        class="data-box markdown-content"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- BUDGET -->
+
+                <div
+                    id="tab-budget"
+                    class="tab-content"
+                >
+
+                    <div class="data-section-title">
+
+                        <div class="data-title-icon">
+                            ₹
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Budget Analysis
+                            </h3>
+
+                            <p>
+                                Estimated costs, feasibility and money-saving recommendations.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="budgetBox"
+                        class="data-box markdown-content"
                     ></div>
 
                 </div>
@@ -627,6 +1159,7 @@
 
 
                 <!-- ITINERARY -->
+
                 <div
                     id="tab-itinerary"
                     class="tab-content"
@@ -655,7 +1188,7 @@
 
                     <div
                         id="itineraryBox"
-                        class="data-box itinerary-box"
+                        class="data-box itinerary-box markdown-content"
                     ></div>
 
                 </div>
@@ -663,6 +1196,7 @@
 
 
                 <!-- AI DETAILS -->
+
                 <div
                     id="tab-agents"
                     class="tab-content"
@@ -689,9 +1223,67 @@
                     </div>
 
 
+                    <div class="details-grid">
+
+                        <div class="detail-card">
+
+                            <span>
+                                Selected Agents
+                            </span>
+
+                            <strong id="selectedAgents">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="detail-card">
+
+                            <span>
+                                LLM Calls
+                            </span>
+
+                            <strong id="llmCalls">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="detail-card detail-card-wide">
+
+                            <span>
+                                Supervisor Reasoning
+                            </span>
+
+                            <div
+                                id="supervisorReasoning"
+                                class="markdown-content"
+                            ></div>
+
+                        </div>
+
+
+                        <div class="detail-card detail-card-wide">
+
+                            <span>
+                                Trip Constraints
+                            </span>
+
+                            <div
+                                id="tripConstraints"
+                                class="constraints-grid"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+
                     <div
                         id="llmBox"
-                        class="data-box"
+                        class="data-box markdown-content hidden"
                     ></div>
 
                 </div>
@@ -704,13 +1296,16 @@
 
 
 
-    <!-- FOOTER -->
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
     <footer>
 
         <div class="footer-inner">
 
             <div class="footer-brand">
-                ✦ TravelMate AI
+                ✈️ TravelMate AI
             </div>
 
             <div class="footer-tech">
@@ -727,18 +1322,33 @@
 
 
 
-    <!-- Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- =====================================================
+         MARKDOWN
+    ====================================================== -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"
+    ></script>
 
 
-    <!-- PDF -->
+
+    <!-- =====================================================
+         PDF
+    ====================================================== -->
+
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
     ></script>
 
 
-    <!-- Custom JS -->
-    <script src="/static/script.js"></script>
+
+    <!-- =====================================================
+         CUSTOM JS
+    ====================================================== -->
+
+    <script
+        src="/static/script.js"
+    ></script>
 
 </body>
 </html>
